@@ -35,6 +35,13 @@ jobs:
           git config --global user.email "devel@fathens.org"
           git config --global user.name "GitHub Actions"
 
+      - name: merge to dev
+        run: |
+          git checkout -t origin/dev
+          git merge --no-edit --no-ff main
+          git push
+          git checkout main
+
       - name: Tag version
         run: |
           git tag $TAG_NAME
@@ -45,9 +52,3 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           draft: true
           generate_release_notes: true
-
-      - name: merge to dev
-        run: |
-          git checkout -t origin/dev
-          git merge --no-edit --no-ff main
-          git push
