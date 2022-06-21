@@ -1,0 +1,47 @@
+name: Release merged
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+env:
+  BASE_NAME: ${{ github.head_ref }}
+
+jobs:
+  draft_release:
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.head_ref, 'release/v') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.TOKEN_OF_ADMIN }}
+
+      - name: Set tag name
+        run: |
+          version=${BASE_NAME#release/}
+          echo "version=$version"
+          echo "TAG_NAME=$version" >> $GITHUB_ENV
+
+      - name: Setup git config
+        run: |
+          git config --global user.email "devel@nsuite.io"
+          git config --global user.name "GitHub Actions"
+
+      - name: Tag version
+        run: |
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          draft: true
+          generate_release_notes: true
+
+      - name: merge to dev
+        run: |
+          git checkout -t origin/dev
+          git merge --no-edit --no-ff main
+          git push
